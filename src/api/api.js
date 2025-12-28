@@ -1,4 +1,3 @@
-// src/api/api.js
 import axios from "axios";
 
 /* ================= AXIOS INSTANCE ================= */
@@ -16,13 +15,11 @@ API.interceptors.request.use((req) => {
 });
 
 /* ================= AUTH ================= */
-// Register
 export const registerUser = async (userData) => {
   const { data } = await API.post("/auth/register", userData);
   return data;
 };
 
-// Login
 export const loginUser = async (credentials) => {
   const { data } = await API.post("/auth/login", credentials);
   localStorage.setItem("token", data.token);
@@ -30,9 +27,9 @@ export const loginUser = async (credentials) => {
   return data;
 };
 
-// Logout
 export const logoutUser = () => {
-  localStorage.clear();
+  localStorage.removeItem("token");
+  localStorage.removeItem("userInfo");
 };
 
 /* ================= USERS (ADMIN) ================= */
@@ -64,7 +61,9 @@ export const deleteUser = async (id) => {
 /* ================= COURSES ================= */
 export const getCourses = async () => {
   const { data } = await API.get("/courses");
-  return Array.isArray(data) ? data : Array.isArray(data?.courses) ? data.courses : [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.courses)) return data.courses;
+  return [];
 };
 
 export const getCourseById = async (id) => {
@@ -89,13 +88,21 @@ export const deleteCourse = async (id) => {
 
 /* ================= ENROLLMENTS ================= */
 export const enrollStudentInCourse = async (studentId, courseId) => {
-  const { data } = await API.post("/enrollments/enroll", { studentId, courseId });
+  const { data } = await API.post("/enrollments/enroll", {
+    studentId,
+    courseId,
+  });
   return data;
 };
 
 export const getStudentEnrollments = async (studentId) => {
   const { data } = await API.get(`/enrollments/student/${studentId}`);
-  return Array.isArray(data) ? data : [];
+
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.enrollments)) return data.enrollments;
+  if (Array.isArray(data?.data)) return data.data;
+
+  return [];
 };
 
 export const removeEnrollment = async (enrollmentId) => {
@@ -103,15 +110,44 @@ export const removeEnrollment = async (enrollmentId) => {
   return data;
 };
 
+/* ================= PROGRESS ================= */
+export const trackLectureProgress = async (studentId, courseId, lectureId) => {
+  const { data } = await API.post("/progress/track", {
+    studentId,
+    courseId,
+    lectureId,
+  });
+  return data;
+};
+
+export const getProgress = async (studentId, courseId) => {
+  const { data } = await API.get(`/progress/${studentId}/${courseId}`);
+
+  const completed = data?.completedLectures?.length || 0;
+  const total = data?.totalLectures || 0;
+
+  const progressPercentage =
+    total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return {
+    ...data,
+    progressPercentage,
+  };
+};
+
 /* ================= LECTURES ================= */
 export const getLectures = async () => {
   const { data } = await API.get("/lectures");
-  return Array.isArray(data) ? data : Array.isArray(data?.lectures) ? data.lectures : [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.lectures)) return data.lectures;
+  return [];
 };
 
 export const getLecturesByCourse = async (courseId) => {
   const { data } = await API.get(`/lectures/course/${courseId}`);
-  return Array.isArray(data) ? data : Array.isArray(data?.lectures) ? data.lectures : [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.lectures)) return data.lectures;
+  return [];
 };
 
 export const getLectureById = async (id) => {
@@ -134,96 +170,101 @@ export const deleteLecture = async (id) => {
   return data;
 };
 
-
 /* ================= EXAMS ================= */
-
-// Get all exams
 export const getAllExams = async () => {
   const { data } = await API.get("/exams");
   return data;
 };
 
-// Get single exam
 export const getExamById = async (id) => {
   const { data } = await API.get(`/exams/${id}`);
   return data;
 };
 
-// Create exam
 export const createExam = async (examData) => {
   const { data } = await API.post("/exams", examData);
   return data;
 };
 
-// Update exam
 export const updateExam = async (id, examData) => {
   const { data } = await API.put(`/exams/${id}`, examData);
   return data;
 };
 
-// Delete exam
 export const deleteExam = async (id) => {
   const { data } = await API.delete(`/exams/${id}`);
   return data;
 };
 
-
 /* ================= QUESTIONS ================= */
-
-// Get questions by exam
 export const getQuestionsByExam = async (examId) => {
   const { data } = await API.get(`/questions/exam/${examId}`);
   return Array.isArray(data) ? data : [];
 };
 
-// Add question
 export const addQuestion = async (questionData) => {
   const { data } = await API.post("/questions", questionData);
   return data;
 };
 
-// Update question
 export const updateQuestion = async (questionId, questionData) => {
   const { data } = await API.put(`/questions/${questionId}`, questionData);
   return data;
 };
 
-// Delete question
 export const deleteQuestion = async (questionId) => {
   const { data } = await API.delete(`/questions/${questionId}`);
   return data;
 };
 
-
 /* ================= ATTEMPTS ================= */
-
-// Submit attempt
 export const submitAttempt = async (attemptData) => {
   const { data } = await API.post("/attempts", attemptData);
   return data;
 };
 
-// Get attempts by user
 export const getAttemptsByUser = async (userId) => {
   const { data } = await API.get(`/attempts/user/${userId}`);
   return Array.isArray(data) ? data : [];
 };
 
-// Get attempts by exam
 export const getAttemptsByExam = async (examId) => {
   const { data } = await API.get(`/attempts/exam/${examId}`);
   return Array.isArray(data) ? data : [];
 };
 
-/* ================= Messages ================= */
-export const sendMessage = async (data) => {
-  const res = await axios.post("/api/messages", data, { withCredentials: true });
-  return res.data;
+/* ================= MESSAGES ================= */
+// ✅ Send a message
+export const sendMessage = async (messageData) => {
+  try {
+    const { data } = await API.post("/messages", messageData);
+    return data; // { success, data: message }
+  } catch (error) {
+    console.error("SendMessage API Error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
+// ✅ Get messages with a specific user
 export const getMessages = async (userId) => {
-  const res = await axios.get(`/api/messages/${userId}`, { withCredentials: true });
-  return res.data;
+  try {
+    const { data } = await API.get(`/messages/${userId}`);
+    return data; // { success, messages: [...] }
+  } catch (error) {
+    console.error("GetMessages API Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// ✅ Get all users available for messaging (FIXED ENDPOINT)
+export const getUsersForMessaging = async () => {
+  try {
+    const { data } = await API.get("/messages"); // ✅ Changed from /messages/users
+    return data; // { success, users: [...] }
+  } catch (error) {
+    console.error("GetUsersForMessaging API Error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 /* ================= EXPORT HELPERS ================= */

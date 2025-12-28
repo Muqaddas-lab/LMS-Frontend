@@ -55,12 +55,18 @@ const Login = () => {
       // Update AuthContext
       login(response.user);
 
-      // Navigate based on role
-      if (response.user.role.toLowerCase() === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      // // Navigate based on role
+      // if (response.user.role.toLowerCase() === 'admin') {
+      //   navigate('/admin/dashboard');
+      // } else {
+      //   navigate('/dashboard');
+      // }
+    if (response.user.role.toLowerCase() === "admin") {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/student/dashboard");
+    }
+
     } catch (error) {
       console.error('Login error:', error);
       alert(error.message || 'Login failed. Please check your credentials.');

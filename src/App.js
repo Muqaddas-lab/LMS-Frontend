@@ -1,51 +1,194 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
+// Pages
 import StartScreen from "./pages/StartScreen";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
+
+// Dashboards
+import Dashboard from "./pages/Dashboard"; // Admin Dashboard
+import StudentDashboard from "./pages/StudentDashboard";
+
+// Admin Pages
 import Users from "./pages/Users";
 import Students from "./pages/Students";
 import CoursesPage from "./pages/Courses";
 import Lectures from "./pages/Lectures";
 import MockExams from "./pages/MockExam";
-import ExamQuestionsPage from "./pages/ExamQuestionsPage"
-import Messages from "./pages/Messages";
+import ExamQuestionsPage from "./pages/ExamQuestionsPage";
+import StudentEnrollments from "./pages/StudentEnrollments";
+import AdminMessages from "./pages/AdminMessages";
+import StudentMessages from "./pages/StudentMessages";
+// Student Pages
+import StudentCoursesPage from "./pages/StudentCoursesPage";
+import StudentLecturesPage from "./pages/StudentLecturesPage";
+import StudentExamsPage from "./pages/StudentExamsPage";
+import StudentExamAttemptPage from "./pages/StudentExamAttemptPage";
+// Protected Route
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Routes */}
+
+          {/* ================= PUBLIC ROUTES ================= */}
           <Route path="/" element={<StartScreen />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />  // Add this
 
-          {/* Admin / Protected Routes */}
-          <Route path="/admin/dashboard" element={<Dashboard />} />
+          {/* ================= ADMIN ROUTES ================= */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute role="Admin">
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Users */}
-          <Route path="/users" element={<Users />} />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute role="Admin">
+                <Users />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Students */}
-          <Route path="/students" element={<Students />} />
+          <Route
+            path="/students"
+            element={
+              <ProtectedRoute role="Admin">
+                <Students />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Courses */}
-          <Route path="/courses" element={<CoursesPage />} />
+          <Route
+            path="/enrollments"
+            element={
+              <ProtectedRoute role="Admin">
+                <StudentEnrollments />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Lectures (Course-specific) */}
-          <Route path="/lectures/:courseId" element={<Lectures />} />
+          <Route
+            path="/courses"
+            element={
+              <ProtectedRoute role="Admin">
+                <CoursesPage />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Mock Exams */}
-          <Route path="/mockexams" element={<MockExams />} />
-          {/* <Route path="/mock-exams" element={<MockExamsPage />} /> */}
-          <Route path="/mock-exams/:examId/questions" element={<ExamQuestionsPage />} />
-          {/* Messages */}
-          <Route path="/messages" element={<Messages />} />
+          <Route
+            path="/lectures/:courseId"
+            element={
+              <ProtectedRoute role="Admin">
+                <Lectures />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mockexams"
+            element={
+              <ProtectedRoute role="Admin">
+                <MockExams />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mock-exams/:examId/questions"
+            element={
+              <ProtectedRoute role="Admin">
+                <ExamQuestionsPage />
+              </ProtectedRoute>
+            }
+          />
+{/* 
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute role="Admin">
+                <Messages />
+              </ProtectedRoute>
+            }
+          />   */}
+                  {/* Admin */}
+          <Route path="/admin/messages" element={
+            <ProtectedRoute role="Admin">
+              <AdminMessages />
+            </ProtectedRoute>
+          } />
+
+            
+          {/* ================= STUDENT ROUTES ================= */}
+          
+          {/* Student Dashboard */}
+          <Route
+            path="/student/dashboard"
+            element={
+              <ProtectedRoute role="Student">
+                <StudentDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Student Courses - List of Enrolled Courses */}
+          <Route
+            path="/student/courses"
+            element={
+              <ProtectedRoute role="Student">
+                <StudentCoursesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Student Lectures - View Lectures for a Specific Course */}
+          <Route
+            path="/student/courses/:courseId"
+            element={
+              <ProtectedRoute role="Student">
+                <StudentLecturesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Student Mock Exams - View All Available Exams */}
+          <Route
+            path="/student/exams"
+            element={
+              <ProtectedRoute role="Student">
+                <StudentExamsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/student/exams/:examId"
+            element={
+              <ProtectedRoute role="Student">
+                <StudentExamAttemptPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Student */}
+        <Route path="/student/messages" element={
+          <ProtectedRoute role="Student">
+            <StudentMessages />
+          </ProtectedRoute>
+        } />
+
+          {/* Catch all - redirect to appropriate dashboard */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+
         </Routes>
       </Router>
     </AuthProvider>

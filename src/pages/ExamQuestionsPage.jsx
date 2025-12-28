@@ -22,6 +22,7 @@ const ExamQuestionsPage = () => {
 
   const fetchQuestions = async () => {
     const data = await getQuestionsByExam(examId);
+    console.log("Question data",data);
     setQuestions(data);
   };
 

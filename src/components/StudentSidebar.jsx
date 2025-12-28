@@ -1,26 +1,25 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  FaUsers,
-  FaUser,
+  FaTachometerAlt,
   FaBook,
   FaClipboardList,
   FaComment,
   FaSignOutAlt,
-  FaUserGraduate,
-  FaTachometerAlt,
 } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 import ATLogo from "../assets/AT.png";
 
-const AdminSidebar = () => {
+const StudentSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const isActive = (path) => location.pathname.startsWith(path);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      localStorage.clear();
+      logout(); 
       navigate("/login", { replace: true });
     }
   };
@@ -36,8 +35,11 @@ const AdminSidebar = () => {
       <ul style={styles.menu}>
         <li>
           <Link
-            to="/admin/dashboard"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/admin/dashboard")) }}
+            to="/student/dashboard"
+            style={{
+              ...styles.link,
+              ...getActiveStyle(isActive("/student/dashboard")),
+            }}
           >
             <FaTachometerAlt /> Dashboard
           </Link>
@@ -45,53 +47,35 @@ const AdminSidebar = () => {
 
         <li>
           <Link
-            to="/users"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/users")) }}
+            to="/student/courses"
+            style={{
+              ...styles.link,
+              ...getActiveStyle(isActive("/student/courses")),
+            }}
           >
-            <FaUsers /> Users
+            <FaBook /> My Courses
           </Link>
         </li>
 
         <li>
           <Link
-            to="/students"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/students")) }}
+            to="/student/exams"
+            style={{
+              ...styles.link,
+              ...getActiveStyle(isActive("/student/exams")),
+            }}
           >
-            <FaUser /> Students
-          </Link>
-        </li>
-
-        {/* <li>
-          <Link
-            to="/enrollments"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/enrollments")) }}
-          >
-            <FaUserGraduate /> Enrollments
-          </Link>
-        </li> */}
-
-        <li>
-          <Link
-            to="/courses"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/courses")) }}
-          >
-            <FaBook /> Courses
+            <FaClipboardList /> Mock Exams
           </Link>
         </li>
 
         <li>
           <Link
-            to="/mockexams"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/mockexams")) }}
-          >
-            <FaClipboardList /> Mock Exam
-          </Link>
-        </li>
-
-        <li>
-          <Link
-            to="/admin/messages"
-            style={{ ...styles.link, ...getActiveStyle(isActive("/admin/messages")) }}
+            to="/student/messages"
+            style={{
+              ...styles.link,
+              ...getActiveStyle(isActive("/student/messages")),
+            }}
           >
             <FaComment /> Messages
           </Link>
@@ -117,7 +101,7 @@ const AdminSidebar = () => {
   );
 };
 
-export default AdminSidebar;
+export default StudentSidebar;
 
 /* 🔹 Helper */
 const getActiveStyle = (active) =>
@@ -149,15 +133,10 @@ const styles = {
   },
   logoContainer: {
     marginBottom: "30px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
   },
   logoImg: {
     width: "100px",
     height: "60px",
-    borderRadius: "10%",
-    marginBottom: "10px",
   },
   menu: {
     listStyle: "none",
