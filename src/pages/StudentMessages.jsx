@@ -2,10 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import StudentSidebar from "../components/StudentSidebar";
 import { useAuth } from "../context/AuthContext";
 import io from "socket.io-client";
-import { getUsersForMessaging, sendMessage, getMessages } from "../api/api";
-import { Send, Search, Paperclip, Smile } from "lucide-react";
+import { getUsersForMessaging, sendMessage, getMessages, deleteMessage } from "../api/api";
+import { Send, Search, Paperclip, Smile, Trash2 } from "lucide-react";
 
-// Socket setup
 const socket = io("http://localhost:5000", { autoConnect: false });
 
 const StudentMessages = () => {
@@ -17,17 +16,16 @@ const StudentMessages = () => {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMessages, setSelectedMessages] = useState([]); // New state for selected messages
   const messagesEndRef = useRef(null);
 
   const currentUserId = user?._id || user?.id;
 
-  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   useEffect(scrollToBottom, [messages]);
 
-  // Fetch admins
   const fetchAdmins = async () => {
     try {
       setLoading(true);
@@ -40,7 +38,6 @@ const StudentMessages = () => {
     }
   };
 
-  // Fetch messages for selected admin
   const fetchMessages = async (adminId) => {
     try {
       setLoading(true);
@@ -53,22 +50,20 @@ const StudentMessages = () => {
     }
   };
 
-  // Select admin
   const selectAdmin = (admin) => {
     setSelectedAdmin(admin._id);
     setSelectedAdminName(admin.fullName || admin.email);
     setMessages([]);
+    setSelectedMessages([]);
     fetchMessages(admin._id);
   };
 
-  // Send message
   const handleSend = async () => {
     if (!text.trim() || !selectedAdmin || !currentUserId) return;
     try {
       const res = await sendMessage({ to: selectedAdmin, text });
       const msg = res.data;
 
-      // Emit to socket
       socket.emit("send_message", {
         senderId: msg.sender._id || msg.sender,
         receiverId: msg.receiver._id || msg.receiver,
@@ -85,7 +80,6 @@ const StudentMessages = () => {
     }
   };
 
-  // Handle enter key
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -93,7 +87,6 @@ const StudentMessages = () => {
     }
   };
 
-  // Format time
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
@@ -103,7 +96,6 @@ const StudentMessages = () => {
     });
   };
 
-  // Filter admins
   const filteredAdmins = admins.filter(
     (a) =>
       a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -112,7 +104,6 @@ const StudentMessages = () => {
 
   const selectedAdminObj = admins.find((a) => a._id === selectedAdmin);
 
-  // Socket connection and receive messages
   useEffect(() => {
     fetchAdmins();
     if (!currentUserId) return;
@@ -141,6 +132,26 @@ const StudentMessages = () => {
     return () => socket.off("receive_message", handleReceive);
   }, [currentUserId, selectedAdmin]);
 
+  // Handle message selection for deletion
+  const toggleSelectMessage = (msgId) => {
+    setSelectedMessages((prev) =>
+      prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
+    );
+  };
+
+  // Delete selected messages
+  const handleDeleteMessages = async () => {
+    if (selectedMessages.length === 0) return;
+    try {
+      await Promise.all(selectedMessages.map((id) => deleteMessage(id)));
+      setMessages((prev) => prev.filter((m) => !selectedMessages.includes(m._id)));
+      setSelectedMessages([]);
+    } catch (err) {
+      console.error("Delete messages error:", err);
+      alert("Failed to delete messages");
+    }
+  };
+
   return (
     <div style={{ display: "flex", height: "100vh", background: "#f3f4f6" }}>
       <StudentSidebar />
@@ -148,7 +159,6 @@ const StudentMessages = () => {
       <div style={{ flex: 1, marginLeft: 250, display: "flex" }}>
         {/* Admin Sidebar */}
         <div style={{ width: 380, background: "#fff", borderRight: "1px solid #e5e7eb", display: "flex", flexDirection: "column" }}>
-          {/* Header */}
           <div style={{ background: "#f3f4f6", padding: 16, display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #e5e7eb" }}>
             <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600 }}>
               {user?.fullName?.charAt(0) || "S"}
@@ -156,7 +166,6 @@ const StudentMessages = () => {
             <span style={{ fontWeight: 600, color: "#1f2937" }}>Student Chat</span>
           </div>
 
-          {/* Search */}
           <div style={{ padding: 12, borderBottom: "1px solid #e5e7eb" }}>
             <div style={{ position: "relative" }}>
               <input
@@ -170,7 +179,6 @@ const StudentMessages = () => {
             </div>
           </div>
 
-          {/* Admins list */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {loading && admins.length === 0 ? (
               <div style={{ padding: 20, textAlign: "center", color: "#6b7280" }}>Loading...</div>
@@ -202,8 +210,7 @@ const StudentMessages = () => {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#fff" }}>
           {selectedAdmin ? (
             <>
-              {/* Header */}
-              <div style={{ background: "#fff", padding: 16, display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#fff", padding: 16, display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600, fontSize: 18 }}>
                     {selectedAdminName?.charAt(0) || "A"}
@@ -213,14 +220,32 @@ const StudentMessages = () => {
                     <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>{selectedAdminObj?.role || "admin"}</p>
                   </div>
                 </div>
+                {selectedMessages.length > 0 && (
+                  <button onClick={handleDeleteMessages} style={{ background: "#ef4444", border: "none", padding: 8, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "#fff" }}>
+                    <Trash2 style={{ width: 16, height: 16 }} /> Delete {selectedMessages.length}
+                  </button>
+                )}
               </div>
 
-              {/* Messages Area */}
               <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
                 {messages.map((m) => {
                   const isMe = (m.sender?._id || m.sender) === currentUserId;
+                  const isSelected = selectedMessages.includes(m._id);
                   return (
-                    <div key={m._id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", gap: 8 }}>
+                    <div
+                      key={m._id}
+                      style={{
+                        display: "flex",
+                        justifyContent: isMe ? "flex-end" : "flex-start",
+                        gap: 8,
+                        cursor: "pointer",
+                        opacity: isSelected ? 0.6 : 1,
+                        border: isSelected ? "1px solid #ef4444" : "none",
+                        borderRadius: 6,
+                        padding: 2
+                      }}
+                      onClick={() => toggleSelectMessage(m._id)}
+                    >
                       {!isMe && (
                         <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #34d399 0%, #10b981 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600 }}>
                           {m.sender?.fullName?.charAt(0) || "U"}
@@ -242,10 +267,7 @@ const StudentMessages = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
               <div style={{ background: "#fff", padding: 16, borderTop: "2px solid #e5e7eb", display: "flex", alignItems: "center", gap: 10 }}>
-                {/* <button style={{ background: "transparent", border: "none", cursor: "pointer" }}><Smile style={{ width: 22, height: 22, color: "#6b7280" }} /></button>
-                <button style={{ background: "transparent", border: "none", cursor: "pointer" }}><Paperclip style={{ width: 22, height: 22, color: "#6b7280" }} /></button> */}
                 <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Type a message..." style={{ flex: 1, padding: "12px 18px", borderRadius: 24, border: "2px solid #e5e7eb", outline: "none", fontSize: 14 }} />
                 <button onClick={handleSend} disabled={!text.trim()} style={{ padding: 12, background: text.trim() ? "#10b981" : "#e5e7eb", color: "#fff", borderRadius: "50%", border: "none", cursor: text.trim() ? "pointer" : "not-allowed" }}><Send style={{ width: 20, height: 20 }} /></button>
               </div>

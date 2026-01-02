@@ -8,6 +8,7 @@ import {
   FaComment,
   FaSignOutAlt,
   FaUserGraduate,
+  FaChartBar, // ✅ ADD THIS
   FaTachometerAlt,
 } from "react-icons/fa";
 import ATLogo from "../assets/AT.png";
@@ -85,6 +86,19 @@ const AdminSidebar = () => {
             style={{ ...styles.link, ...getActiveStyle(isActive("/mockexams")) }}
           >
             <FaClipboardList /> Mock Exam
+          </Link>
+        </li>
+
+           {/* ✅ NEW: Exam Results */}
+        <li>
+          <Link
+            to="/admin/exam-results"
+            style={{
+              ...styles.link,
+              ...getActiveStyle(isActive("/admin/exam-results")),
+            }}
+          >
+            <FaChartBar /> Exam Results
           </Link>
         </li>
 

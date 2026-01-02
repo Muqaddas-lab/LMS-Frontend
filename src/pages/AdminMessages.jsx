@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import io from "socket.io-client";
 import { getUsersForMessaging, sendMessage, getMessages } from "../api/api";
-import { Send, Search, Paperclip, Smile } from "lucide-react";
+import { Send, Search, Trash } from "lucide-react";
 
 const socket = io("http://localhost:5000", { autoConnect: false });
 
@@ -13,18 +13,19 @@ const AdminMessages = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedUserName, setSelectedUserName] = useState("");
   const [messages, setMessages] = useState([]);
+  const [selectedMessages, setSelectedMessages] = useState([]); // ✅ Track selected messages
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef(null);
 
-  // Scroll to bottom when messages update
+  const currentUserId = user?._id || user?.id;
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   useEffect(scrollToBottom, [messages]);
 
-  // Fetch users
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -37,7 +38,6 @@ const AdminMessages = () => {
     }
   };
 
-  // Fetch messages for selected user
   const fetchMessages = async (userId) => {
     try {
       setLoading(true);
@@ -50,7 +50,6 @@ const AdminMessages = () => {
     }
   };
 
-  // Socket setup
   useEffect(() => {
     fetchUsers();
     if (!user?._id) return;
@@ -80,15 +79,14 @@ const AdminMessages = () => {
     return () => socket.off("receive_message", handleReceive);
   }, [user?._id, selectedUser]);
 
-  // Select user
   const selectUser = (u) => {
     setSelectedUser(u._id);
     setSelectedUserName(u.fullName || u.email);
     setMessages([]);
+    setSelectedMessages([]); // clear selected messages on new user
     fetchMessages(u._id);
   };
 
-  // Send message
   const handleSend = async () => {
     if (!text.trim() || !selectedUser) return;
 
@@ -112,7 +110,6 @@ const AdminMessages = () => {
     }
   };
 
-  // Enter key to send
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -132,7 +129,25 @@ const AdminMessages = () => {
   );
 
   const selectedUserObj = users.find((u) => u._id === selectedUser);
-  const currentUserId = user?._id || user?.id;
+
+  // ✅ Toggle message selection
+  const toggleSelectMessage = (msgId) => {
+    setSelectedMessages((prev) =>
+      prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
+    );
+  };
+
+  // ✅ Delete selected messages
+  const deleteSelectedMessages = () => {
+    if (selectedMessages.length === 0) return;
+    const confirmed = window.confirm("Are you sure you want to delete selected messages?");
+    if (!confirmed) return;
+
+    setMessages((prev) => prev.filter((m) => !selectedMessages.includes(m._id)));
+    setSelectedMessages([]);
+    // Optionally, send API request to delete from backend
+    // await deleteMessagesAPI(selectedUser, selectedMessages);
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "#f3f4f6" }}>
@@ -140,7 +155,6 @@ const AdminMessages = () => {
       <div style={{ flex: 1, marginLeft: 250, display: "flex" }}>
         {/* Users Sidebar */}
         <div style={{ width: 380, background: "#fff", borderRight: "1px solid #e5e7eb", display: "flex", flexDirection: "column" }}>
-          {/* Header */}
           <div style={{ background: "#f3f4f6", padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e5e7eb" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600 }}>
@@ -149,8 +163,6 @@ const AdminMessages = () => {
               <span style={{ fontWeight: 600, color: "#1f2937" }}>Admin Chat</span>
             </div>
           </div>
-
-          {/* Search */}
           <div style={{ padding: 12, background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
             <div style={{ position: "relative" }}>
               <input
@@ -163,8 +175,6 @@ const AdminMessages = () => {
               <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#9ca3af" }} />
             </div>
           </div>
-
-          {/* Users List */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {loading && users.length === 0 ? (
               <div style={{ padding: 20, textAlign: "center", color: "#6b7280" }}>Loading...</div>
@@ -191,7 +201,7 @@ const AdminMessages = () => {
           {selectedUser ? (
             <>
               {/* Chat Header */}
-              <div style={{ background: "#fff", padding: 16, display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#fff", padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600, fontSize: 18 }}>
                     {selectedUserName?.charAt(0) || "U"}
@@ -201,14 +211,34 @@ const AdminMessages = () => {
                     <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>{selectedUserObj?.role || "user"}</p>
                   </div>
                 </div>
+                {/* Delete selected messages button */}
+                {selectedMessages.length > 0 && (
+                  <button onClick={deleteSelectedMessages} style={{ background: "#ef4444", border: "none", padding: "8px 12px", borderRadius: 6, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Trash style={{ width: 16, height: 16 }} /> Delete
+                  </button>
+                )}
               </div>
 
               {/* Messages Area */}
               <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
                 {messages.map((m) => {
                   const isMe = (m.sender?._id || m.sender) === currentUserId;
+                  const isSelected = selectedMessages.includes(m._id);
+
                   return (
-                    <div key={m._id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", gap: 8 }}>
+                    <div
+                      key={m._id}
+                      onClick={() => toggleSelectMessage(m._id)}
+                      style={{
+                        display: "flex",
+                        justifyContent: isMe ? "flex-end" : "flex-start",
+                        gap: 8,
+                        border: isSelected ? "2px solid #2563eb" : "none",
+                        borderRadius: 8,
+                        padding: isSelected ? 2 : 0,
+                        cursor: "pointer",
+                      }}
+                    >
                       {!isMe && (
                         <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600 }}>
                           {m.sender?.fullName?.charAt(0) || "U"}
@@ -232,8 +262,6 @@ const AdminMessages = () => {
 
               {/* Input Area */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 16, borderTop: "2px solid #e5e7eb" }}>
-                {/* <button style={{ background: "transparent", border: "none", cursor: "pointer" }}><Smile style={{ width: 22, height: 22, color: "#6b7280" }} /></button>
-                <button style={{ background: "transparent", border: "none", cursor: "pointer" }}><Paperclip style={{ width: 22, height: 22, color: "#6b7280" }} /></button> */}
                 <input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
@@ -241,7 +269,9 @@ const AdminMessages = () => {
                   placeholder="Type a message..."
                   style={{ flex: 1, padding: "12px 18px", borderRadius: 24, border: "2px solid #e5e7eb", outline: "none", fontSize: 14 }}
                 />
-                <button onClick={handleSend} disabled={!text.trim()} style={{ padding: 12, borderRadius: "50%", border: "none", background: text.trim() ? "#2563eb" : "#e5e7eb", color: "#fff", cursor: text.trim() ? "pointer" : "not-allowed" }}><Send style={{ width: 20, height: 20 }} /></button>
+                <button onClick={handleSend} disabled={!text.trim()} style={{ padding: 12, borderRadius: "50%", border: "none", background: text.trim() ? "#2563eb" : "#e5e7eb", color: "#fff", cursor: text.trim() ? "pointer" : "not-allowed" }}>
+                  <Send style={{ width: 20, height: 20 }} />
+                </button>
               </div>
             </>
           ) : (

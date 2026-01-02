@@ -42,6 +42,7 @@ const MockExamsPage = () => {
       ...formData,
       duration: Number(formData.duration),
       totalMarks: Number(formData.totalMarks),
+      passingMarks: Number(formData.passingMarks),
     };
     try {
       if (editingExam) await updateExam(editingExam._id, payload);
@@ -107,6 +108,7 @@ const MockExamsPage = () => {
                       description: exam.description || "",
                       duration: exam.duration,
                       totalMarks: exam.totalMarks,
+                      passingMarks: "", 
                     });
                     setFormVisible(true);
                   }} />
@@ -152,6 +154,15 @@ const MockExamsPage = () => {
                 onChange={(e) => setFormData({ ...formData, totalMarks: e.target.value })}
                 style={input}
               />
+              <input
+                  placeholder="Passing Marks"
+                  required
+                  type="number"
+                  value={formData.passingMarks}
+                  onChange={(e) => setFormData({ ...formData, passingMarks: e.target.value })}
+                  style={input}
+                />
+
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 15 }}>
                 <button style={btnPrimary} type="submit">Save</button>

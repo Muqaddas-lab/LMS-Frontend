@@ -18,7 +18,7 @@ import CoursesPage from "./pages/Courses";
 import Lectures from "./pages/Lectures";
 import MockExams from "./pages/MockExam";
 import ExamQuestionsPage from "./pages/ExamQuestionsPage";
-import StudentEnrollments from "./pages/StudentEnrollments";
+import AdminExamResults from "./pages/AdminExamResults";
 import AdminMessages from "./pages/AdminMessages";
 import StudentMessages from "./pages/StudentMessages";
 // Student Pages
@@ -69,15 +69,6 @@ function App() {
           />
 
           <Route
-            path="/enrollments"
-            element={
-              <ProtectedRoute role="Admin">
-                <StudentEnrollments />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
             path="/courses"
             element={
               <ProtectedRoute role="Admin">
@@ -112,16 +103,12 @@ function App() {
               </ProtectedRoute>
             }
           />
-{/* 
           <Route
-            path="/messages"
-            element={
-              <ProtectedRoute role="Admin">
-                <Messages />
-              </ProtectedRoute>
-            }
-          />   */}
-                  {/* Admin */}
+            path="/admin/exam-results"
+            element={<AdminExamResults />}
+          />
+
+         {/* Admin */}
           <Route path="/admin/messages" element={
             <ProtectedRoute role="Admin">
               <AdminMessages />

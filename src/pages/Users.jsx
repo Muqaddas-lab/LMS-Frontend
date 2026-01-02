@@ -140,9 +140,18 @@ const UsersPage = () => {
     }
   };
 
+  // Dynamic fetching (polling)
   useEffect(() => {
-    fetchUsers();
-    fetchCourses();
+    const fetchData = async () => {
+      await fetchUsers();
+      await fetchCourses();
+    };
+
+    fetchData(); // initial fetch
+
+    const interval = setInterval(fetchData, 5000); // fetch every 5 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   // Add / Edit
@@ -213,6 +222,7 @@ const UsersPage = () => {
       console.error(error);
       alert("Failed to delete user!");
     }
+    
   };
 
   // Reset password
@@ -344,9 +354,7 @@ const UsersPage = () => {
                         borderRadius: "6px",
                         marginRight: "4px",
                         fontSize: "12px"
-                      }}>
-                        {course}
-                      </span>
+                      }}>{course}</span>
                     ))}
                   </td>
                   <td style={{ textAlign: "center" }}>
@@ -401,7 +409,7 @@ const UsersPage = () => {
               <label>Country</label>
               <input name="country" placeholder="Country" value={formData.country} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
               <label>Date of Birth</label>
-              <input name="dob" type="date" placeholder="Date of Birth" value={formData.dob} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
+              <input name="dob" type="date" value={formData.dob} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
               <label>Gender</label>
               <select name="gender" value={formData.gender} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }}>
                 <option value="Male">Male</option>
@@ -409,7 +417,7 @@ const UsersPage = () => {
                 <option value="Other">Other</option>
               </select>
               <label>Selected Date</label>
-              <input name="selectDate" type="date" placeholder="Select Date" value={formData.selectDate} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
+              <input name="selectDate" type="date" value={formData.selectDate} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
               <select name="role" value={formData.role} onChange={handleChange} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }}>
                 <option value="Admin">Admin</option>
                 <option value="Student">Student</option>
@@ -419,7 +427,7 @@ const UsersPage = () => {
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-          
+
               {/* Courses */}
               <div>
                 <label><strong>Courses</strong></label>
@@ -449,24 +457,14 @@ const UsersPage = () => {
             <h3>User Details</h3>
             <p><strong>Name:</strong> {selectedUser.fullName}</p>
             <p><strong>Email:</strong> {selectedUser.email}</p>
-            <p><strong>Phone:</strong> {selectedUser.phone || "-"}</p>
-            <p><strong>Address:</strong> {selectedUser.address || "-"}</p>
             <p><strong>Role:</strong> {selectedUser.role}</p>
             <p><strong>Status:</strong> {selectedUser.status}</p>
-            <p><strong>Country:</strong> {selectedUser.country || "-"}</p>
-            <p><strong>Date of Birth:</strong> {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : "-"}</p>
-            <p><strong>Gender:</strong> {selectedUser.gender || "-"}</p>
-            <p><strong>Select Date:</strong> {selectedUser.selectDate ? new Date(selectedUser.selectDate).toLocaleDateString() : "-"}</p>
-            <p><strong>Courses:</strong> {getCourseNames(selectedUser.courses).map(c => (
-              <span key={c} style={{
-                background: "#3b82f6",
-                color: "#fff",
-                padding: "2px 6px",
-                borderRadius: "6px",
-                marginRight: "4px",
-                fontSize: "12px"
-              }}>{c}</span>
-            ))}</p>
+            <p><strong>Phone:</strong> {selectedUser.phone}</p>
+            <p><strong>Address:</strong> {selectedUser.address}</p>
+            <p><strong>Country:</strong> {selectedUser.country}</p>
+            <p><strong>DOB:</strong> {selectedUser.dob}</p>
+            <p><strong>Gender:</strong> {selectedUser.gender}</p>
+            <p><strong>Courses:</strong> {getCourseNames(selectedUser.courses).join(", ")}</p>
           </Modal>
         )}
       </div>
